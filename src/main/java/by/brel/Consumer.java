@@ -21,8 +21,6 @@ public class Consumer {
 
         try {
             do {
-                Thread.sleep(5000);
-
                 channel.queueDeclare(
                         queue.getActualName(),
                         true,
@@ -55,7 +53,7 @@ public class Consumer {
 
             } while (true);
 
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
