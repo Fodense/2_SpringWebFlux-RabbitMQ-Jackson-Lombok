@@ -3,15 +3,16 @@ package by.brel;
 import by.brel.config.AppConfig;
 import by.brel.dto.Balance;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.DeliverCallback;
 import org.springframework.amqp.core.Queue;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.List;
 
-public class Main {
-    public static void main(String[] args) throws InterruptedException {
+public class Publisher {
+    public static void main(String[] args) {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
 
         Communication communication = context.getBean("communication", Communication.class);
@@ -32,7 +33,6 @@ public class Main {
                         null
                 );
 
-//Publish
                 channel.basicPublish(
                         "",
                         queue.getActualName(),
@@ -40,38 +40,15 @@ public class Main {
                         toBalanceByte(balances)
                 );
 
-                System.out.print("Sent balance IDs -> ");
+                System.out.print("Ids sent balances -> ");
                 balances.forEach(
                         balance -> System.out.print(balance.getIdBalance() + " ")
                 );
                 System.out.println();
 
-//Consume
-                DeliverCallback deliverCallback = (s, delivery) -> {
-                    try {
-                        List<Balance> balanceList = readByteArray(delivery.getBody());
-
-                        System.out.print("Received balances IDs -> ");
-                        balanceList.forEach(
-                                balance -> System.out.print(balance.getIdBalance() + " ")
-                        );
-                        System.out.println();
-
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                };
-
-                channel.basicConsume(
-                        queue.getActualName(),
-                        true,
-                        deliverCallback,
-                        consumerTag -> {}
-                );
-
             } while (true);
 
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -82,13 +59,5 @@ public class Main {
         out.writeObject(balances);
 
         return outputStream.toByteArray();
-    }
-
-    public static List readByteArray(byte[] bytes) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
-        ObjectInputStream in = new ObjectInputStream(inputStream);
-        List balances = (List) in.readObject();
-
-        return balances;
     }
 }
